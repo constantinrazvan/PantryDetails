@@ -1,4 +1,6 @@
+import bcrypt from "bcrypt";
 import { FolderPermission } from "../models/enums/folder-permission.enum";
+import { UserRole } from "../models/enums/user-role.enum";
 import { FolderAccessRepository } from "../repositories/folder-access.repository";
 import { FolderRepository } from "../repositories/folder.repository";
 import { UserRepository } from "../repositories/user.repository";
@@ -110,7 +112,20 @@ export class DemoDataService {
             return { created: 0 };
         }
 
-        const demoUser = await this.userRepository.findByEmail("user@pantrydetails.local");
+        let demoUser = await this.userRepository.findByEmail("user@pantrydetails.local");
+        if (!demoUser) {
+            const demoUserId = await this.userRepository.create({
+                firstName: "User",
+                lastName: "Pantry",
+                email: "user@pantrydetails.local",
+                password: await bcrypt.hash("User1234!", 10),
+                role: UserRole.USER,
+                roleId: null,
+                mustChangePassword: false,
+            });
+            demoUser = await this.userRepository.findById(demoUserId);
+        }
+
         let created = 0;
 
         for (const demo of DEMO_FOLDERS) {

@@ -12,18 +12,18 @@ const users = [
         password: process.env.SEED_ADMIN_PASSWORD || "Admin1234!",
         role: UserRole.ADMIN,
     },
-    {
-        firstName: "User",
-        lastName: "Pantry",
-        email: "user@pantrydetails.local",
-        password: process.env.SEED_USER_PASSWORD || "User1234!",
-        role: UserRole.USER,
-    },
 ];
 
 async function seedUsers() {
     await AppDataSource.initialize();
     const userRepository = new UserRepository();
+
+    const existingUsers = await userRepository.findAll();
+    if (existingUsers.length > 0) {
+        console.log("Users already exist, nothing to seed");
+        await AppDataSource.destroy();
+        return;
+    }
 
     for (const user of users) {
         const existing = await userRepository.findByEmail(user.email);
