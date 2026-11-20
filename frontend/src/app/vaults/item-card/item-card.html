@@ -1,0 +1,132 @@
+
+<div class="card border-0 text-white overflow-hidden" [class]="cardClass()">
+  <button
+    type="button"
+    class="btn d-flex align-items-center gap-3 w-100 text-start text-reset p-3 border-0 rounded-0"
+    (click)="toggle()"
+    [attr.aria-expanded]="open"
+  >
+    <span class="d-flex align-items-center justify-content-center rounded p-2 flex-shrink-0 bg-white bg-opacity-25">
+      <i [class]="'bi fs-5 ' + icon()"></i>
+    </span>
+    <span class="d-flex flex-column flex-grow-1 overflow-hidden">
+      <span class="fw-semibold text-truncate">{{ item.title }}</span>
+      @if (subtitle()) {
+        <small class="text-white text-truncate">{{ subtitle() }}</small>
+      }
+    </span>
+    <i class="bi" [class.bi-chevron-down]="!open" [class.bi-chevron-up]="open"></i>
+  </button>
+
+  @if (open) {
+    <div class="card-body border-top border-white border-opacity-25">
+      @if (error) {
+        <div class="alert alert-danger py-2 small">{{ error }}</div>
+      }
+
+      @switch (item.type) {
+        @case (ItemType.CREDENTIAL) {
+          <dl class="row mb-2">
+            <dt class="col-sm-3 fw-semibold">User</dt>
+            <dd class="col-sm-9 text-break">
+              {{ item.username }}
+              <button type="button" class="btn btn-sm btn-outline-light ms-2" (click)="copy(item.username, 'username')" title="Copy">
+                <i class="bi" [class.bi-check2]="copied === 'username'" [class.bi-copy]="copied !== 'username'"></i>
+              </button>
+            </dd>
+
+            <dt class="col-sm-3 fw-semibold">Password</dt>
+            <dd class="col-sm-9">
+              <code class="text-white text-break">{{ password ?? '••••••••••' }}</code>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-light ms-2"
+                (click)="togglePassword()"
+                [disabled]="revealing"
+                [title]="password !== null ? 'Hide' : 'Show (' + settings.revealSeconds + ' s)'"
+              >
+                <i class="bi" [class.bi-eye]="password === null" [class.bi-eye-slash]="password !== null"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-light ms-2" (click)="copyPassword()" title="Copy password">
+                <i class="bi" [class.bi-check2]="copied === 'password'" [class.bi-copy]="copied !== 'password'"></i>
+              </button>
+            </dd>
+
+            @if (item.url; as url) {
+              <dt class="col-sm-3 fw-semibold">URL</dt>
+              <dd class="col-sm-9 text-break">
+                <a class="link-light" [href]="url" target="_blank" rel="noopener noreferrer">{{ url }}</a>
+              </dd>
+            }
+
+            @if (loading) {
+              <dt class="col-sm-3 fw-semibold">Notes</dt>
+              <dd class="col-sm-9 text-white">Loading…</dd>
+            } @else if (detail?.notes; as notes) {
+              <dt class="col-sm-3 fw-semibold">Notes</dt>
+              <dd class="col-sm-9 text-pre-wrap">{{ notes }}</dd>
+            }
+          </dl>
+        }
+
+        @case (ItemType.NOTE) {
+          @if (loading) {
+            <p class="text-white">Loading…</p>
+          } @else if (detail; as d) {
+            <p class="text-pre-wrap text-break">{{ d.body || '(empty)' }}</p>
+          }
+          <button type="button" class="btn btn-sm btn-light" (click)="download()" [disabled]="downloading">
+            <i class="bi bi-download me-1"></i> Download .txt
+          </button>
+        }
+
+        @case (ItemType.FILE) {
+          <dl class="row mb-2">
+            <dt class="col-sm-3 fw-semibold">File</dt>
+            <dd class="col-sm-9 text-break">{{ item.originalName }}</dd>
+            @if (item.size !== null) {
+              <dt class="col-sm-3 fw-semibold">Size</dt>
+              <dd class="col-sm-9">{{ (item.size ?? 0) / 1024 | number: '1.0-1' }} KB</dd>
+            }
+          </dl>
+          <button type="button" class="btn btn-sm btn-light" (click)="download()" [disabled]="downloading">
+            @if (downloading) {
+              <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+            } @else {
+              <i class="bi bi-download me-1"></i>
+            }
+            Download
+          </button>
+        }
+      }
+
+      <div class="d-flex flex-wrap align-items-center gap-2 border-top border-white border-opacity-25 pt-3 mt-3">
+        <small class="text-white me-auto">Updated {{ item.updatedAt | date: 'dd.MM.yyyy HH:mm' }}</small>
+        @if (canWrite) {
+          <a
+            class="btn btn-sm btn-light"
+            [routerLink]="['/dashboard/vaults', folderId, 'items', item.id, 'edit']"
+          >
+            <i class="bi bi-pencil me-1"></i> Edit
+          </a>
+        }
+        @if (canDelete) {
+          <button type="button" class="btn btn-sm btn-danger" (click)="askDelete()">
+            <i class="bi bi-trash me-1"></i> Delete
+          </button>
+        }
+      </div>
+    </div>
+  }
+</div>
+
+@if (confirmDelete) {
+  <app-confirm-modal
+    title="Delete item"
+    [message]="'Are you sure you want to delete ' + item.title + '? This cannot be undone.'"
+    [busy]="deleting"
+    [error]="deleteError"
+    (confirmed)="delete()"
+    (cancelled)="confirmDelete = false"
+  />
+}

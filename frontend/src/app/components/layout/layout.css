@@ -1,0 +1,30 @@
+.app-shell {
+  height: 100vh;
+  height: 100dvh;
+}
+
+@media (max-width: 767.98px) {
+  .tab-bar {
+    padding-bottom: calc(0.25rem + env(safe-area-inset-bottom)) !important;
+  }
+
+  .tab-link {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .tab-label {
+    font-size: 0.7rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .vault-panel {
+    width: 260px;
+  }
+}
+
+.vault-panel .list-group {
+  --bs-list-group-action-hover-color: var(--bs-primary);
+  --bs-list-group-action-active-color: var(--bs-primary);
+}

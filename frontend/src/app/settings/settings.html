@@ -1,0 +1,234 @@
+<div class="p-3 p-md-4">
+  <div class="row">
+    <div class="col-12 col-lg-6">
+      <div class="vstack gap-3">
+        <h1 class="h3 mb-1">Settings</h1>
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h2 class="h5 card-title"><i class="bi bi-eye-slash me-2"></i>Security</h2>
+            <p class="text-body-secondary small">How long a password stays visible after you press "Show".</p>
+
+            <label for="reveal" class="form-label">Hide the password after</label>
+            <select
+              id="reveal"
+              class="form-select"
+              [value]="settings.revealSeconds"
+              (change)="changeRevealSeconds($event)"
+            >
+              @for (seconds of revealOptions; track seconds) {
+                <option [value]="seconds" [selected]="settings.revealSeconds === seconds">{{ seconds }} seconds</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        @if (auth.isAdmin()) {
+          <div class="card shadow-sm">
+            <div class="card-body d-flex align-items-center gap-2">
+              <h2 class="h5 mb-0 me-auto"><i class="bi bi-person-badge me-2"></i>Roles</h2>
+              <a routerLink="/dashboard/settings/roles/new" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-lg"></i><span class="d-none d-sm-inline ms-1">New role</span>
+              </a>
+            </div>
+
+            @if (rolesLoading) {
+              <div class="card-body pt-0 text-body-secondary">
+                <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Loading…
+              </div>
+            } @else if (rolesError) {
+              <div class="card-body pt-0">
+                <div class="alert alert-danger py-2 mb-0">Could not load the roles.</div>
+              </div>
+            } @else {
+              <ul class="list-group list-group-flush border-top">
+                @for (role of roles; track role.id) {
+                  <li class="list-group-item d-flex align-items-center gap-3 py-3">
+                    <div class="avatar rounded-circle d-flex align-items-center justify-content-center bg-primary text-white fs-5 flex-shrink-0">
+                      <i [class]="'bi bi-' + role.icon"></i>
+                    </div>
+                    <div class="flex-grow-1 overflow-hidden">
+                      <div class="fw-semibold text-truncate">{{ role.name }}</div>
+                      <div class="d-flex flex-wrap gap-1 mt-1">
+                        <span class="badge" [class]="role.canView ? 'badge text-bg-success' : 'badge text-bg-light border'">
+                          <i class="bi bi-eye me-1"></i>View
+                        </span>
+                        <span class="badge" [class]="role.canEdit ? 'badge text-bg-success' : 'badge text-bg-light border'">
+                          <i class="bi bi-pencil me-1"></i>Edit
+                        </span>
+                        <span class="badge" [class]="role.canDelete ? 'badge text-bg-success' : 'badge text-bg-light border'">
+                          <i class="bi bi-trash me-1"></i>Delete
+                        </span>
+                      </div>
+                    </div>
+                    <span class="small text-body-secondary text-nowrap d-none d-sm-inline">
+                      {{ role.userCount ?? 0 }} {{ role.userCount === 1 ? 'member' : 'members' }}
+                    </span>
+                    <div class="d-flex gap-1 flex-shrink-0">
+                      <a class="btn btn-sm btn-outline-primary" [routerLink]="['/dashboard/settings/roles', role.id, 'edit']" title="Edit">
+                        <i class="bi bi-pencil"></i>
+                      </a>
+                      <button type="button" class="btn btn-sm btn-outline-danger" (click)="askDeleteRole(role)" title="Delete">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </li>
+                } @empty {
+                  <li class="list-group-item text-body-secondary">
+                    No roles yet. Members without a role can only view the items in vaults.
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h2 class="h5 card-title"><i class="bi bi-envelope-at me-2"></i>Email (SMTP)</h2>
+              <p class="text-body-secondary small">
+                The server used to send passwords to new members, password resets and notices.
+                @if (smtp?.source === 'env') {
+                  <br />The settings from <code>.env</code> are used right now; what you save here replaces them.
+                } @else if (smtp?.source === 'none') {
+                  <br /><span class="text-danger">Not configured, emails are not sent.</span>
+                }
+              </p>
+
+              @if (smtpMessage) {
+                <div class="alert py-2 small" [class]="'alert py-2 small alert-' + smtpMessageType">{{ smtpMessage }}</div>
+              }
+
+              @if (smtpLoading) {
+                <p class="text-body-secondary mb-0">Loading…</p>
+              } @else {
+                <form [formGroup]="smtpForm" (ngSubmit)="saveSmtp()" novalidate>
+                  <div class="row g-3 mb-3">
+                    <div class="col-12 col-sm-8">
+                      <label for="smtpHost" class="form-label">Server</label>
+                      <input id="smtpHost" class="form-control" formControlName="host" placeholder="smtp.gmail.com" [class.is-invalid]="smtpInvalid('host')" />
+                      <div class="invalid-feedback">Server is required.</div>
+                    </div>
+                    <div class="col-12 col-sm-4">
+                      <label for="smtpPort" class="form-label">Port</label>
+                      <input id="smtpPort" type="number" class="form-control" formControlName="port" [class.is-invalid]="smtpInvalid('port')" />
+                      <div class="invalid-feedback">1 – 65535</div>
+                    </div>
+                  </div>
+
+                  <div class="form-check form-switch mb-3">
+                    <input id="smtpSecure" class="form-check-input" type="checkbox" role="switch" formControlName="secure" />
+                    <label for="smtpSecure" class="form-check-label">SSL/TLS connection (usually port 465)</label>
+                  </div>
+
+                  <div class="row g-3 mb-3">
+                    <div class="col-12 col-sm-6">
+                      <label for="smtpUser" class="form-label">User</label>
+                      <input id="smtpUser" class="form-control" formControlName="user" autocomplete="off" />
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <label for="smtpPassword" class="form-label">Password</label>
+                      <div class="input-group">
+                        <input
+                          id="smtpPassword"
+                          class="form-control"
+                          formControlName="password"
+                          autocomplete="new-password"
+                          [type]="showSmtpPassword ? 'text' : 'password'"
+                          [placeholder]="smtp?.hasPassword ? '•••••••• (saved)' : ''"
+                        />
+                        <button type="button" class="btn btn-outline-primary" (click)="showSmtpPassword = !showSmtpPassword">
+                          <i class="bi" [class.bi-eye]="!showSmtpPassword" [class.bi-eye-slash]="showSmtpPassword"></i>
+                        </button>
+                      </div>
+                      @if (smtp?.hasPassword) {
+                        <div class="form-text">Leave empty to keep the saved password.</div>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="mb-4">
+                    <label for="smtpFrom" class="form-label">Sender</label>
+                    <input id="smtpFrom" class="form-control" formControlName="from" placeholder="PantryDetails <no-reply@company.com>" />
+                  </div>
+
+                  <div class="d-flex flex-wrap gap-2 justify-content-end">
+                    <button
+                      type="button"
+                      class="btn btn-outline-primary"
+                      (click)="testSmtp()"
+                      [disabled]="smtpTesting || smtp?.source === 'none'"
+                    >
+                      @if (smtpTesting) {
+                        <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                      } @else {
+                        <i class="bi bi-send me-1"></i>
+                      }
+                      Send test
+                    </button>
+                    <button type="submit" class="btn btn-primary" [disabled]="smtpSaving">
+                      @if (smtpSaving) {
+                        <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                      }
+                      Save
+                    </button>
+                  </div>
+                </form>
+              }
+            </div>
+          </div>
+
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h2 class="h5 card-title"><i class="bi bi-database me-2"></i>Demo data</h2>
+              <p class="text-body-secondary small">
+                Adds a few test vaults (Personal, Work, Family, Finance) with passwords, notes and files.
+                Deleting removes the demo vaults and the demo user. The admin account stays, and you can
+                delete it from Members after you add another admin.
+              </p>
+
+              @if (demoMessage) {
+                <div [class]="'alert py-2 small alert-' + demoMessageType">{{ demoMessage }}</div>
+              }
+
+              <div class="d-flex justify-content-end">
+                @if (hasDemoData) {
+                  <button type="button" class="btn btn-outline-danger" (click)="confirmDeleteDemo = true" [disabled]="demoBusy">
+                    <i class="bi bi-trash me-1"></i>Delete demo data
+                  </button>
+                } @else {
+                  <button type="button" class="btn btn-primary" (click)="importDemo()" [disabled]="demoBusy">
+                    @if (demoBusy) {
+                      <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                    } @else {
+                      <i class="bi bi-download me-1"></i>
+                    }
+                    Import demo data
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+@if (roleToDelete; as role) {
+  <app-confirm-modal
+    title="Delete role"
+    [message]="'Are you sure you want to delete the role ' + role.name + '? Members with this role will have no role (view only).'"
+    [busy]="deleting"
+    [error]="deleteError"
+    (confirmed)="deleteRole()"
+    (cancelled)="roleToDelete = null"
+  />
+}
+
+@if (confirmDeleteDemo) {
+  <app-confirm-modal
+    title="Delete demo data"
+    message="Are you sure you want to delete the demo vaults and the demo user?"
+    [busy]="demoBusy"
+    (confirmed)="deleteDemo()"
+    (cancelled)="confirmDeleteDemo = false"
+  />
+}

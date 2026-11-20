@@ -1,0 +1,18 @@
+export const ROLE_ICONS = [
+    "person",
+    "person-badge",
+    "person-gear",
+    "people",
+    "shield",
+    "shield-check",
+    "star",
+    "award",
+    "briefcase",
+    "house",
+    "eye",
+    "pencil",
+    "key",
+    "tools",
+    "gem",
+    "heart",
+];

@@ -1,0 +1,86 @@
+<div class="p-3 p-md-4">
+  <div class="row">
+    <div class="col-12 col-lg-6">
+      <a routerLink="/dashboard/settings" class="d-inline-flex align-items-center gap-1 mb-3 text-decoration-none">
+        <i class="bi bi-chevron-left"></i> Back to settings
+      </a>
+      <h1 class="h3 mb-3">{{ isEdit ? 'Edit role' : 'New role' }}</h1>
+
+      @if (error) {
+        <div class="alert alert-danger py-2">{{ error }}</div>
+      }
+
+      @if (loading) {
+        <p class="text-body-secondary">Loading…</p>
+      } @else if (notFound) {
+        <div class="alert alert-warning">This role does not exist.</div>
+      } @else {
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="card card-body shadow-sm">
+          <div class="d-flex align-items-center gap-3 mb-4">
+            <span class="d-flex align-items-center justify-content-center rounded-circle bg-primary text-white fs-4 preview">
+              <i [class]="'bi bi-' + form.controls.icon.value"></i>
+            </span>
+            <div>
+              <div class="fw-semibold">{{ form.controls.name.value || 'Role name' }}</div>
+              <div class="small text-body-secondary">This is how the role looks in the member list</div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="name" class="form-label">Name</label>
+            <input
+              id="name"
+              class="form-control"
+              formControlName="name"
+              maxlength="50"
+              placeholder="e.g. Editor, Accountant, Family"
+              [class.is-invalid]="invalid('name')"
+              autofocus
+            />
+            <div class="invalid-feedback">Name is required (max 50 characters).</div>
+          </div>
+
+          <div class="mb-4">
+            <span class="form-label d-block">Icon</span>
+            <div class="d-flex flex-wrap gap-2" role="radiogroup" aria-label="Icon">
+              @for (icon of icons; track icon) {
+                <input type="radio" class="btn-check" [id]="'icon-' + icon" formControlName="icon" [value]="icon" />
+                <label class="btn btn-outline-primary fs-5 icon-option" [for]="'icon-' + icon" [title]="icon">
+                  <i [class]="'bi bi-' + icon"></i>
+                </label>
+              }
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <span class="form-label d-block">Permissions</span>
+            <div class="list-group">
+              @for (permission of permissions; track permission.key) {
+                <label class="list-group-item d-flex align-items-center gap-3 py-3">
+                  <i [class]="'bi fs-5 text-primary ' + permission.icon"></i>
+                  <span class="flex-grow-1">
+                    <span class="d-block fw-semibold">{{ permission.label }}</span>
+                    <span class="small text-body-secondary">{{ permission.hint }}</span>
+                  </span>
+                  <span class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" role="switch" [formControlName]="permission.key" />
+                  </span>
+                </label>
+              }
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 justify-content-end">
+            <a routerLink="/dashboard/settings" class="btn btn-outline-primary">Cancel</a>
+            <button type="submit" class="btn btn-primary" [disabled]="saving">
+              @if (saving) {
+                <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+              }
+              {{ isEdit ? 'Save' : 'Create role' }}
+            </button>
+          </div>
+        </form>
+      }
+    </div>
+  </div>
+</div>

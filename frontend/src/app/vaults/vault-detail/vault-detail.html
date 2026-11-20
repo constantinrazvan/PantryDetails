@@ -1,0 +1,126 @@
+<div class="p-3 p-md-4">
+  <a routerLink="/dashboard/vaults" class="d-md-none d-inline-flex align-items-center gap-1 mb-3 text-decoration-none">
+    <i class="bi bi-chevron-left"></i> Vaults
+  </a>
+
+  @if (folderLoading) {
+    <p class="text-body-secondary">Loading…</p>
+  } @else if (folderError) {
+    <p class="text-danger">The vault was not found or you don't have access to it.</p>
+  } @else if (folder; as f) {
+    <header class="mb-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+        <h1 class="h3 mb-1 text-break">{{ f.name }}</h1>
+
+        <div class="d-flex gap-2">
+          @if (auth.isAdmin()) {
+            <a class="btn btn-sm btn-outline-primary" [routerLink]="['/dashboard/vaults', f.id, 'edit']" title="Edit vault">
+              <i class="bi bi-pencil"></i><span class="d-none d-sm-inline ms-1">Edit</span>
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-danger" (click)="askDelete()" title="Delete vault">
+              <i class="bi bi-trash"></i><span class="d-none d-sm-inline ms-1">Delete</span>
+            </button>
+          }
+
+          @if (canWrite()) {
+            <div class="dropdown" (click)="$event.stopPropagation()">
+              <button
+                type="button"
+                class="btn btn-sm btn-primary dropdown-toggle"
+                (click)="toggleAddMenu($event)"
+                [attr.aria-expanded]="addMenuOpen"
+              >
+                <i class="bi bi-plus-lg me-1"></i> Add
+              </button>
+              <ul class="dropdown-menu end-0 top-100 mt-1" [class.show]="addMenuOpen">
+                @for (option of addOptions; track option.type) {
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      [routerLink]="['/dashboard/vaults', f.id, 'items', 'new', option.type]"
+                      (click)="addMenuOpen = false"
+                    >
+                      <i [class]="'bi me-2 ' + option.icon"></i>{{ option.label }}
+                    </a>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        </div>
+      </div>
+      @if (f.description) {
+        <p class="text-body-secondary mb-2">{{ f.description }}</p>
+      }
+    </header>
+    <div class="row g-2 align-items-center mb-3">
+      <div class="col-12 col-lg">
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input
+            type="search"
+            class="form-control"
+            placeholder="Search by title, username, file…"
+            [value]="search"
+            (input)="search = $any($event.target).value"
+          />
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-auto d-flex flex-wrap gap-1" role="group" aria-label="Type filter">
+        @for (filter of filters; track filter.value) {
+          <button
+            type="button"
+            class="btn btn-sm text-nowrap"
+            [class.btn-primary]="typeFilter === filter.value"
+            [class.btn-outline-primary]="typeFilter !== filter.value"
+            (click)="typeFilter = filter.value"
+          >
+            <i [class]="'bi me-1 ' + filter.icon"></i>
+            {{ filter.label }}
+            <span class="ms-1 opacity-75">{{ countOf(filter.value) }}</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (itemsLoading) {
+      <p class="text-body-secondary">Loading items…</p>
+    } @else if (itemsError) {
+      <div class="alert alert-danger d-flex align-items-center gap-2">
+        Could not load the items.
+        <button type="button" class="btn btn-sm btn-link p-0" (click)="loadItems()">Try again</button>
+      </div>
+    } @else {
+      <div class="d-flex flex-column gap-2">
+        @for (item of visibleItems(); track item.id) {
+          <app-item-card [folderId]="f.id" [item]="item" [canWrite]="canWrite()" [canDelete]="canDelete()" (deleted)="onItemDeleted($event)" />
+        } @empty {
+          <div class="text-center text-body-secondary py-5">
+            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+            @if (countOf('all') === 0) {
+              This vault is empty.
+              @if (canWrite()) {
+                <div class="small mt-1">Use the <strong>Add</strong> button at the top.</div>
+              }
+            } @else {
+              No items match.
+            }
+          </div>
+        }
+      </div>
+    }
+
+    @if (confirmDelete) {
+      <app-confirm-modal
+        title="Delete vault"
+        [message]="'Are you sure you want to delete the vault ' + f.name + ' and all its ' + countOf('all') + ' items? This cannot be undone.'"
+        confirmLabel="Delete vault"
+        [busy]="deleting"
+        [error]="deleteError"
+        (confirmed)="deleteVault()"
+        (cancelled)="confirmDelete = false"
+      />
+    }
+  }
+</div>

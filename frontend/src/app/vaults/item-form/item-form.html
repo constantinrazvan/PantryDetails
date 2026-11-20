@@ -1,0 +1,113 @@
+<div class="p-3 p-md-4">
+  <a [routerLink]="['/dashboard/vaults', id]" class="d-inline-flex align-items-center gap-1 mb-3 text-decoration-none">
+    <i class="bi bi-chevron-left"></i> Back to vault
+  </a>
+
+  <div class="row">
+    <div class="col-12 col-lg-8 col-xl-6">
+      <h1 class="h3 mb-4">{{ heading() }}</h1>
+
+      @if (error) {
+        <div class="alert alert-danger py-2">{{ error }}</div>
+      }
+
+      @if (loading) {
+        <p class="text-body-secondary">Loading…</p>
+      } @else if (itemType; as type) {
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="card card-body">
+          @if (type === ItemType.FILE && !isEdit) {
+            <div class="mb-3">
+              <label for="file" class="form-label">File</label>
+              <input
+                id="file"
+                type="file"
+                class="form-control"
+                [class.is-invalid]="fileTouched && !file"
+                (change)="onFileChange($event)"
+              />
+              <div class="invalid-feedback">Choose a file.</div>
+            </div>
+          }
+
+          <div class="mb-3">
+            <label for="title" class="form-label">
+              Title
+              @if (type === ItemType.FILE) {
+                <span class="text-body-secondary small">(optional, the file name by default)</span>
+              }
+            </label>
+            <input id="title" class="form-control" formControlName="title" maxlength="255" [class.is-invalid]="invalid('title')" />
+            <div class="invalid-feedback">Title is required (max 255 characters).</div>
+          </div>
+
+          @switch (type) {
+            @case (ItemType.NOTE) {
+              <div class="mb-3">
+                <label for="body" class="form-label">Content</label>
+                <textarea id="body" class="form-control" rows="10" formControlName="body"></textarea>
+              </div>
+            }
+
+            @case (ItemType.CREDENTIAL) {
+              <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input
+                  id="username"
+                  class="form-control"
+                  formControlName="username"
+                  autocomplete="off"
+                  [class.is-invalid]="invalid('username')"
+                />
+                <div class="invalid-feedback">Username is required.</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <div class="input-group has-validation">
+                  <input
+                    id="password"
+                    class="form-control"
+                    formControlName="password"
+                    autocomplete="new-password"
+                    [type]="showPassword ? 'text' : 'password'"
+                    [placeholder]="isEdit ? 'Leave empty to keep it unchanged' : ''"
+                    [class.is-invalid]="invalid('password')"
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-outline-primary"
+                    (click)="showPassword = !showPassword"
+                    [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+                  >
+                    <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"></i>
+                  </button>
+                  <div class="invalid-feedback">Password is required.</div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="url" class="form-label">URL <span class="text-body-secondary small">(optional)</span></label>
+                <input id="url" type="url" class="form-control" formControlName="url" placeholder="https://" />
+              </div>
+
+              <div class="mb-3">
+                <label for="notes" class="form-label">Notes <span class="text-body-secondary small">(optional)</span></label>
+                <textarea id="notes" class="form-control" rows="3" formControlName="notes"></textarea>
+              </div>
+            }
+          }
+
+          <div class="d-flex gap-2 justify-content-end mt-2">
+            <a [routerLink]="['/dashboard/vaults', id]" class="btn btn-outline-primary">Cancel</a>
+            <button type="submit" class="btn btn-primary" [disabled]="saving">
+              @if (saving) {
+                <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+              }
+              {{ isEdit ? 'Save' : 'Add' }}
+            </button>
+          </div>
+        </form>
+      }
+    </div>
+  </div>
+</div>

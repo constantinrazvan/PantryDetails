@@ -1,0 +1,134 @@
+<div class="p-3 p-md-4">
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <div class="me-auto">
+      <h1 class="h3 mb-0">Members</h1>
+      <p class="text-body-secondary mb-0">
+        {{ users.length }} {{ users.length === 1 ? 'member' : 'members' }}
+        @if (loading) {
+          <span class="spinner-border spinner-border-sm ms-1" aria-hidden="true"></span>
+        }
+      </p>
+    </div>
+    <a routerLink="/dashboard/members/new" class="btn btn-primary">
+      <i class="bi bi-person-plus me-1"></i> Add member
+    </a>
+  </div>
+  <form [formGroup]="filters" (ngSubmit)="search()" class="card shadow-sm mb-3">
+    <div class="card-body">
+      <div class="row g-2">
+        <div class="col-12 col-xl-4">
+          <input type="search" class="form-control" formControlName="search" placeholder="Name or email…" aria-label="Search" />
+        </div>
+        <div class="col-6 col-md-4 col-xl">
+          <select class="form-select" formControlName="access" aria-label="Access">
+            <option value="">Everyone</option>
+            <option value="admin">Admin</option>
+            <option value="member">Member</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-4 col-xl">
+          <select class="form-select" formControlName="role" aria-label="Role">
+            <option value="">All roles</option>
+            <option value="none">No role</option>
+            @for (role of roles; track role.id) {
+              <option [value]="role.id">{{ role.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-12 col-md-4 col-xl-2">
+          <select class="form-select" formControlName="status" aria-label="Status">
+            <option value="">Any status</option>
+            <option value="active">Active</option>
+            <option value="pending">Temporary password</option>
+          </select>
+        </div>
+      </div>
+      <div class="d-flex flex-column flex-sm-row justify-content-sm-end gap-2 mt-3">
+        @if (showReset()) {
+          <button type="button" class="btn btn-outline-primary" (click)="reset()">
+            <i class="bi bi-x-lg me-1"></i> Reset
+          </button>
+        }
+        <button type="submit" class="btn btn-primary" [disabled]="loading">
+          <i class="bi bi-search me-1"></i> Search
+        </button>
+      </div>
+    </div>
+  </form>
+
+  @if (error) {
+    <div class="alert alert-danger d-flex align-items-center gap-2">
+      {{ error }}
+      <button type="button" class="btn btn-sm btn-link p-0" (click)="search()">Try again</button>
+    </div>
+  } @else {
+    <div class="card shadow-sm">
+      <ul class="list-group list-group-flush">
+        @for (user of users; track user.id) {
+          <li class="list-group-item d-flex align-items-center gap-3 py-3">
+            <div
+              class="avatar rounded-circle d-flex align-items-center justify-content-center fw-semibold text-white flex-shrink-0"
+              [class.bg-danger]="user.role === UserRole.ADMIN"
+              [class.bg-primary]="user.role !== UserRole.ADMIN"
+            >
+              {{ initials(user) }}
+            </div>
+
+            <div class="flex-grow-1 overflow-hidden">
+              <div class="fw-semibold text-truncate">
+                {{ user.firstName }} {{ user.lastName }}
+                @if (user.id === auth.user()?.id) {
+                  <span class="text-body-secondary fw-normal small">(you)</span>
+                }
+              </div>
+              <div class="small text-body-secondary text-truncate">{{ user.email }}</div>
+              <div class="d-flex flex-wrap gap-1 mt-1">
+                @if (user.role === UserRole.ADMIN) {
+                  <span class="badge text-bg-danger"><i class="bi bi-shield-check me-1"></i>Admin</span>
+                }
+                @if (user.memberRole; as role) {
+                  <span class="badge text-bg-primary"><i [class]="'bi me-1 bi-' + role.icon"></i>{{ role.name }}</span>
+                } @else if (user.role !== UserRole.ADMIN) {
+                  <span class="badge text-bg-light border">No role</span>
+                }
+                @if (user.mustChangePassword) {
+                  <span class="badge text-bg-warning"><i class="bi bi-hourglass-split me-1"></i>Temporary password</span>
+                }
+              </div>
+            </div>
+
+            <span class="small text-body-secondary text-nowrap d-none d-md-inline">
+              since {{ user.createdAt | date: 'dd.MM.yyyy' }}
+            </span>
+
+            <div class="d-flex gap-1 flex-shrink-0">
+              <a class="btn btn-sm btn-outline-primary" [routerLink]="['/dashboard/members', user.id, 'edit']" title="Edit">
+                <i class="bi bi-pencil"></i>
+              </a>
+              @if (user.id !== auth.user()?.id) {
+                <button type="button" class="btn btn-sm btn-outline-danger" (click)="askDelete(user)" title="Delete">
+                  <i class="bi bi-trash"></i>
+                </button>
+              }
+            </div>
+          </li>
+        } @empty {
+          <li class="list-group-item text-body-secondary text-center py-4">
+            No members found.
+          </li>
+        }
+      </ul>
+    </div>
+  }
+</div>
+
+@if (userToDelete; as user) {
+  <app-confirm-modal
+    title="Delete member"
+    [message]="'Are you sure you want to delete the account of ' + user.firstName + ' ' + user.lastName + ' (' + user.email + ')? This cannot be undone.'"
+    [busy]="deleting"
+    [error]="deleteError"
+    (confirmed)="delete()"
+    (cancelled)="userToDelete = null"
+  />
+}

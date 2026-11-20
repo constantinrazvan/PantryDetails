@@ -1,0 +1,28 @@
+<div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" (click)="cancel()">
+  <div class="modal-dialog modal-dialog-centered" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ title }}</h5>
+        <button type="button" class="btn-close" aria-label="Close" (click)="cancel()" [disabled]="busy"></button>
+      </div>
+
+      <div class="modal-body">
+        <p class="mb-0">{{ message }}</p>
+        @if (error) {
+          <div class="alert alert-danger py-2 small mt-3 mb-0">{{ error }}</div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-primary" (click)="cancel()" [disabled]="busy">Cancel</button>
+        <button type="button" [class]="'btn ' + confirmClass" (click)="confirmed.emit()" [disabled]="busy">
+          @if (busy) {
+            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+          }
+          {{ confirmLabel }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop show"></div>
