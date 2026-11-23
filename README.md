@@ -56,7 +56,7 @@ TypeScript, Node.js, Express, TypeORM, Angular, Bootstrap, MySQL, Docker, Postma
 Clone the project
 
 ```bash
-git clone https://link-to-project
+git clone https://github.com/constantinrazvan/PantryDetails.git
 cd PantryDetails
 ```
 
